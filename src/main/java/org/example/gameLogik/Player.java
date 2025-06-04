@@ -7,29 +7,24 @@ public abstract class Player {
     private boolean[] diceHeld;
 
     public Player(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Player name cannot be null or empty");
-        }
-        this.name = name;
+        this.name = name != null ? name : "Spielende Person";
         this.scoreCard = new ScoreCard();
-        this.rollsRemaining = 3; // Maximal 3 Würfe pro Runde
-        this.diceHeld = new boolean[5]; // Für 5 Würfel
+        this.rollsRemaining = 3;
+        this.diceHeld = new boolean[5];
     }
-
 
     public void toggleDieHold(int dieIndex) {
         if (dieIndex < 0 || dieIndex >= 5) {
-            throw new IllegalArgumentException("Die index must be between 0 and 4");
+            throw new IllegalArgumentException("Ungültiger Würfelindex");
         }
         diceHeld[dieIndex] = !diceHeld[dieIndex];
     }
-
 
     public abstract void scoreInCategory(Dice[] dice);
 
     public void rollDice(Dice[] dice) {
         if (dice == null || dice.length != 5) {
-            throw new IllegalArgumentException("Dice array must contain exactly 5 elements");
+            throw new IllegalArgumentException("Ungültige Würfel");
         }
 
         if (rollsRemaining > 0) {
@@ -62,37 +57,23 @@ public abstract class Player {
         }
 
         switch (category) {
-            case EINSER:
-                return counts[0] * 1;
-            case ZWEIER:
-                return counts[1] * 2;
-            case DREIER:
-                return counts[2] * 3;
-            case VIERER:
-                return counts[3] * 4;
-            case FUENFER:
-                return counts[4] * 5;
-            case SECHSER:
-                return counts[5] * 6;
-
-            case DREIERPASCH:
-                return isNOfAKind(counts, 3) ? sumDice(dice) : 0;
-            case VIERERPASCH:
-                return isNOfAKind(counts, 4) ? sumDice(dice) : 0;
-            case FULL_HOUSE:
-                return isFullHouse(counts) ? 25 : 0;
-            case KLEINE_STRASSE:
-                return isSmallStraight(counts) ? 30 : 0;
-            case GROSSE_STRASSE:
-                return isLargeStraight(counts) ? 40 : 0;
-            case KNIFFEL:
-                return isKniffel(counts) ? 50 : 0;
-            case CHANCE:
-                return sumDice(dice);
-            default:
-                return 0;
+            case EINSER: return counts[0] * 1;
+            case ZWEIER: return counts[1] * 2;
+            case DREIER: return counts[2] * 3;
+            case VIERER: return counts[3] * 4;
+            case FUENFER: return counts[4] * 5;
+            case SECHSER: return counts[5] * 6;
+            case DREIERPASCH: return isNOfAKind(counts, 3) ? sumDice(dice) : 0;
+            case VIERERPASCH: return isNOfAKind(counts, 4) ? sumDice(dice) : 0;
+            case FULL_HOUSE: return isFullHouse(counts) ? 25 : 0;
+            case KLEINE_STRASSE: return isSmallStraight(counts) ? 30 : 0;
+            case GROSSE_STRASSE: return isLargeStraight(counts) ? 40 : 0;
+            case KNIFFEL: return isKniffel(counts) ? 50 : 0;
+            case CHANCE: return sumDice(dice);
+            default: return 0;
         }
     }
+
     private boolean isFullHouse(int[] counts) {
         boolean hasTwo = false, hasThree = false;
         for (int count : counts) {

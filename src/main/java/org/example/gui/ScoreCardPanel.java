@@ -1,25 +1,33 @@
 package org.example.gui;
 
-import org.example.gameLogik.*;
+import org.example.gameLogik.ScoreCard;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 
 public class ScoreCardPanel extends JPanel {
-    private JTable scoreTable;
-    private ScoreCardTableModel tableModel;
+    private final JTable scoreTable;
+    private final ScoreCardTableModel tableModel;
 
     public ScoreCardPanel(ScoreCard scoreCard) {
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(300, 600));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         tableModel = new ScoreCardTableModel(scoreCard);
         scoreTable = new JTable(tableModel);
-        scoreTable.setRowHeight(30);
-        scoreTable.getColumnModel().getColumn(0).setPreferredWidth(150);
-        scoreTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+        customizeTable();
 
         add(new JScrollPane(scoreTable), BorderLayout.CENTER);
+    }
+
+    private void customizeTable() {
+        scoreTable.setRowHeight(30);
+        scoreTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        scoreTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        scoreTable.getColumnModel().getColumn(0).setPreferredWidth(180);
+        scoreTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+        scoreTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     }
 
     public void updateScoreCard(ScoreCard scoreCard) {
@@ -29,13 +37,10 @@ public class ScoreCardPanel extends JPanel {
 
     public ScoreCard.Category getSelectedCategory() {
         int row = scoreTable.getSelectedRow();
-        if (row >= 0) {
-            return tableModel.getCategoryAt(row);
-        }
-        return null;
+        return row >= 0 ? tableModel.getCategoryAt(row) : null;
     }
 
-    class ScoreCardTableModel extends AbstractTableModel {
+    private static class ScoreCardTableModel extends AbstractTableModel {
         private ScoreCard scoreCard;
         private final String[] columnNames = {"Kategorie", "Punkte"};
 
@@ -83,8 +88,21 @@ public class ScoreCardPanel extends JPanel {
         }
 
         private String categoryToString(ScoreCard.Category category) {
-            String name = category.name().toLowerCase();
-            return name.substring(0, 1).toUpperCase() + name.substring(1).replace("_", " ");
+            return switch (category) {
+                case EINSER -> "Einser";
+                case ZWEIER -> "Zweier";
+                case DREIER -> "Dreier";
+                case VIERER -> "Vierer";
+                case FUENFER -> "Fünfer";
+                case SECHSER -> "Sechser";
+                case DREIERPASCH -> "Dreierpasch";
+                case VIERERPASCH -> "Viererpasch";
+                case FULL_HOUSE -> "Full House";
+                case KLEINE_STRASSE -> "Kleine Straße";
+                case GROSSE_STRASSE -> "Große Straße";
+                case KNIFFEL -> "Kniffel";
+                case CHANCE -> "Chance";
+            };
         }
     }
 }

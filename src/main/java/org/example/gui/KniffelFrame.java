@@ -1,21 +1,20 @@
 package org.example.gui;
 
 import org.example.gameLogik.*;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
 public class KniffelFrame extends JFrame {
     private final GameController controller;
-    private  DicePanel dicePanel;
+    private DicePanel dicePanel;
     private ScoreCardPanel scoreCardPanel;
-    private  JLabel statusLabel;
+    private JLabel statusLabel;
 
-    public KniffelFrame(int gameMode, int playerCount) {
-        this.controller = new GameController(gameMode, playerCount);
+    public KniffelFrame(String playerName) {
+        this.controller = new GameController(playerName);
 
-        setTitle("Kniffel - " + getGameModeName(gameMode));
+        setTitle("Kniffel - Einzelspieler");
         setSize(1000, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -26,31 +25,31 @@ public class KniffelFrame extends JFrame {
 
     private void setupUI() {
         setLayout(new BorderLayout(10, 10));
+        getContentPane().setBackground(new Color(240, 240, 240));
 
-
+        // Status Panel
         statusLabel = new JLabel("", JLabel.CENTER);
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(statusLabel, BorderLayout.NORTH);
 
-
+        // Dice Panel
         dicePanel = new DicePanel(controller.getDices(), controller);
         add(dicePanel, BorderLayout.CENTER);
 
-
-        scoreCardPanel = new ScoreCardPanel(controller.getCurrentPlayer().getScoreCard());
+        // Score Card Panel
+        scoreCardPanel = new ScoreCardPanel(controller.getPlayer().getScoreCard());
         add(scoreCardPanel, BorderLayout.EAST);
 
-
+        // Control Panel
         add(new ControlPanel(), BorderLayout.SOUTH);
     }
 
     private void updateGameState() {
         SwingUtilities.invokeLater(() -> {
-            Player current = controller.getCurrentPlayer();
-            statusLabel.setText(current.getName() + " ist am Zug - Würfe übrig: " + (3 - controller.getRollCount()));
-
-            dicePanel.updateDiceDisplay();
-            scoreCardPanel.updateScoreCard(current.getScoreCard());
+            statusLabel.setText("Würfe übrig: " + (3 - controller.getRollCount()));
+            dicePanel.updateDice();
+            scoreCardPanel.updateScoreCard(controller.getPlayer().getScoreCard());
 
             if (controller.isGameOver()) {
                 showGameResult();
@@ -59,20 +58,29 @@ public class KniffelFrame extends JFrame {
     }
 
     private void showGameResult() {
-        Player winner = controller.getWinner();
-        JOptionPane.showMessageDialog(this,
-                "Spiel beendet!\nGewinner: " + winner.getName() +
-                        "\nPunkte: " + winner.getScoreCard().getTotalScore(),
-                "Spielende", JOptionPane.INFORMATION_MESSAGE);
+        int totalScore = controller.getPlayer().getScoreCard().getTotalScore();
+        String message = String.format(
+                "<html><div style='text-align:center;'>" +
+                        "<h2>Spiel beendet!</h2>" +
+                        "<p>Ihre Gesamtpunktzahl: <b>%d</b></p>" +
+                        "<p>%s</p></div></html>",
+                totalScore,
+                getResultMessage(totalScore)
+        );
+
+        JOptionPane.showMessageDialog(
+                this,
+                message,
+                "Spielende",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
-    private String getGameModeName(int gameMode) {
-        return switch (gameMode) {
-            case 0 -> "Einzelspieler";
-            case 1 -> "Mehrspieler";
-            case 2 -> "Gegen Computer";
-            default -> "Unbekannter Modus";
-        };
+    private String getResultMessage(int score) {
+        if (score > 250) return "Hervorragende Leistung!";
+        if (score > 200) return "Gut gespielt!";
+        if (score > 150) return "Solide Leistung";
+        return "Üben Sie weiter!";
     }
 
     private class ControlPanel extends JPanel {
@@ -80,8 +88,9 @@ public class KniffelFrame extends JFrame {
         private final JButton endTurnButton;
 
         public ControlPanel() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 20, 10));
-            setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            setLayout(new FlowLayout(FlowLayout.CENTER, 30, 15));
+            setBorder(BorderFactory.createEmptyBorder(10, 10, 20, 10));
+            setBackground(new Color(220, 220, 220));
 
             rollButton = createButton("Würfeln", this::handleRoll);
             endTurnButton = createButton("Zug beenden", this::handleEndTurn);
@@ -92,26 +101,35 @@ public class KniffelFrame extends JFrame {
 
         private JButton createButton(String text, java.util.function.Consumer<ActionEvent> action) {
             JButton button = new JButton(text);
-            button.setPreferredSize(new Dimension(150, 40));
+            button.setPreferredSize(new Dimension(150, 45));
             button.setFont(new Font("Arial", Font.BOLD, 14));
+            button.setBackground(new Color(70, 130, 180));
+            button.setForeground(Color.WHITE);
             button.addActionListener(action::accept);
             return button;
         }
 
         private void handleRoll(ActionEvent e) {
-            controller.rollDice();
-            updateGameState();
+            if (controller.getGameState() == GameController.GameState.ROLLING) {
+                controller.rollDice();
+                updateGameState();
+            }
         }
 
         private void handleEndTurn(ActionEvent e) {
-            ScoreCard.Category selected = scoreCardPanel.getSelectedCategory();
-            if (selected != null) {
-                controller.selectCategory(selected);
-                updateGameState();
-            } else {
-                JOptionPane.showMessageDialog(KniffelFrame.this,
-                        "Bitte eine Kategorie auswählen!",
-                        "Fehler", JOptionPane.WARNING_MESSAGE);
+            if (controller.getGameState() == GameController.GameState.SELECTING_CATEGORY) {
+                ScoreCard.Category selected = scoreCardPanel.getSelectedCategory();
+                if (selected != null) {
+                    controller.selectCategory(selected);
+                    updateGameState();
+                } else {
+                    JOptionPane.showMessageDialog(
+                            KniffelFrame.this,
+                            "Bitte wählen Sie eine Kategorie aus",
+                            "Fehler",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
             }
         }
     }

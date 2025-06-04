@@ -27,7 +27,7 @@ public class ScoreCard {
     public ScoreCard() {
         scores = new EnumMap<>(Category.class);
         for (Category c : Category.values()) {
-            scores.put(c, null); // Use null to indicate unused categories
+            scores.put(c, null);
         }
         totalScore = 0;
         bonus = false;
@@ -35,18 +35,15 @@ public class ScoreCard {
 
     public void setScore(Category category, int value) {
         if (category == null) {
-            throw new IllegalArgumentException("Category cannot be null");
+            throw new IllegalArgumentException("Kategorie darf nicht null sein");
         }
-
         if (scores.get(category) != null) {
-            throw new IllegalStateException("Category already used");
+            throw new IllegalStateException("Kategorie wurde bereits verwendet");
         }
 
-        if (category.fixedValue > 0) {
-            scores.put(category, value > 0 ? category.fixedValue : 0);
-        } else {
-            scores.put(category, Math.max(value, 0));
-        }
+        scores.put(category, category.fixedValue > 0 ?
+                (value > 0 ? category.fixedValue : 0) :
+                Math.max(value, 0));
         calculateTotal();
     }
 
